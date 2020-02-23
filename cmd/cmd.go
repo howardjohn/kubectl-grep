@@ -15,7 +15,10 @@ var rootCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Short: "A plugin to grep Kubernetes resources.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		resources := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin())
+		resources, err := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin())
+		if err != nil {
+			return err
+		}
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), resources)
 		return nil
 	},
