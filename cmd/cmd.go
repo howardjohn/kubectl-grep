@@ -10,9 +10,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	unlist = false
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "kubectl-grep",
-	Args:  cobra.MinimumNArgs(1),
+	Use: "kubectl-grep",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 && !unlist {
+			return fmt.Errorf("requires at least %d arg(s), only received %d", 1, len(args))
+		}
+		return nil
+	},
 	Short: "A plugin to grep Kubernetes resources.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resources, err := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin())
@@ -22,6 +31,11 @@ var rootCmd = &cobra.Command{
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), resources)
 		return nil
 	},
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVarP(&unlist, "unlist", "L", unlist,
+		"Split Kubernetes lists")
 }
 
 func Execute() {

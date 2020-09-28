@@ -22,6 +22,14 @@ type KubernetesObject struct {
 	} `json:"metadata"`
 }
 
+type KubernetesListRaw struct {
+	Items []map[interface{}]interface{} `json:"items"`
+}
+
+type KubernetesListMeta struct {
+	Items []KubernetesObject `json:"items"`
+}
+
 func (o KubernetesObject) Matches(r Resource) bool {
 	if r.Kind != "" && o.Kind != r.Kind {
 		return false
@@ -36,6 +44,9 @@ func (o KubernetesObject) Matches(r Resource) bool {
 }
 
 func (o KubernetesObject) MatchesAny(rs []Resource) bool {
+	if len(rs) == 0 {
+		return true
+	}
 	for _, r := range rs {
 		if o.Matches(r) {
 			return true
@@ -55,9 +66,38 @@ func GrepResources(resources []Resource, in io.Reader) (string, error) {
 		if err := yaml.Unmarshal([]byte(text), &obj); err != nil {
 			return "", err
 		}
-		if obj.MatchesAny(resources) {
-			matches = append(matches, text)
+		if obj.Kind == "List" {
+			objs, metas, err := decomposeList(text)
+			if err != nil {
+				return "", err
+			}
+			for i, raw := range objs {
+				meta := metas[i]
+				if meta.MatchesAny(resources) {
+					o, err := yaml.Marshal(raw)
+					if err != nil {
+						return "", err
+					}
+					matches = append(matches, "\n"+string(o))
+				}
+			}
+		} else {
+			if obj.MatchesAny(resources) {
+				matches = append(matches, text)
+			}
 		}
 	}
 	return strings.Join(matches, "\n---"), nil
+}
+
+func decomposeList(text string) ([]map[interface{}]interface{}, []KubernetesObject, error) {
+	m := KubernetesListMeta{}
+	if err := yaml.Unmarshal([]byte(text), &m); err != nil {
+		return nil, nil, err
+	}
+	r := KubernetesListRaw{}
+	if err := yaml.Unmarshal([]byte(text), &r); err != nil {
+		return nil, nil, err
+	}
+	return r.Items, m.Items, nil
 }
