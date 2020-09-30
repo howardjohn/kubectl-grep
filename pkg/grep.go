@@ -47,13 +47,13 @@ func match(pattern string, s string) bool {
 }
 
 func (o KubernetesObject) Matches(r Resource) bool {
-	if r.Kind != "" && o.Kind != r.Kind {
+	if !match(r.Kind, o.Kind) {
 		return false
 	}
-	if r.Name != "" && o.Metadata.Name != r.Name {
+	if !match(r.Name, o.Metadata.Name) {
 		return false
 	}
-	if r.Namespace != "" && o.Metadata.Namespace != r.Namespace {
+	if !match(r.Namespace, o.Metadata.Namespace) {
 		return false
 	}
 	return true
