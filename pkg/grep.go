@@ -30,6 +30,22 @@ type KubernetesListMeta struct {
 	Items []KubernetesObject `json:"items"`
 }
 
+func match(pattern string, s string) bool {
+	if pattern == "" || pattern == "*" {
+		return true
+	}
+	if s == "" {
+		return false
+	}
+	if strings.HasPrefix(pattern, "*") {
+		return strings.HasSuffix(s, pattern[1:])
+	}
+	if strings.HasSuffix(pattern, "*") {
+		return strings.HasPrefix(s, pattern[:len(pattern)-1])
+	}
+	return pattern == s
+}
+
 func (o KubernetesObject) Matches(r Resource) bool {
 	if r.Kind != "" && o.Kind != r.Kind {
 		return false
