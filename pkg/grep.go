@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -20,6 +21,10 @@ type KubernetesObject struct {
 		Name      string `json:"name"`
 		Namespace string `json:"namespace"`
 	} `json:"metadata"`
+}
+
+func (o KubernetesObject) String() string {
+	return fmt.Sprintf("%s/%s.%s", o.Kind, o.Metadata.Name, o.Metadata.Namespace)
 }
 
 type KubernetesListRaw struct {
@@ -71,7 +76,7 @@ func (o KubernetesObject) MatchesAny(rs []Resource) bool {
 	return false
 }
 
-func GrepResources(resources []Resource, in io.Reader) (string, error) {
+func GrepResources(resources []Resource, in io.Reader, summary bool) (string, error) {
 	st, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", err
@@ -94,14 +99,25 @@ func GrepResources(resources []Resource, in io.Reader) (string, error) {
 					if err != nil {
 						return "", err
 					}
-					matches = append(matches, "\n"+string(o))
+					if summary {
+						matches = append(matches, meta.String())
+					} else {
+						matches = append(matches, "\n"+string(o))
+					}
 				}
 			}
 		} else {
 			if obj.MatchesAny(resources) {
-				matches = append(matches, text)
+				if summary {
+					matches = append(matches, obj.String())
+				} else {
+					matches = append(matches, text)
+				}
 			}
 		}
+	}
+	if summary {
+		return strings.Join(matches, "\n"), nil
 	}
 	return strings.Join(matches, "\n---"), nil
 }
