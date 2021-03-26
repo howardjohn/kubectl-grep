@@ -27,8 +27,10 @@ func (o KubernetesObject) String() string {
 	return fmt.Sprintf("%s/%s.%s", o.Kind, o.Metadata.Name, o.Metadata.Namespace)
 }
 
+type genericMap = map[interface{}]interface{}
+
 type KubernetesListRaw struct {
-	Items []map[interface{}]interface{} `json:"items"`
+	Items []genericMap `json:"items"`
 }
 
 type KubernetesListMeta struct {
@@ -76,7 +78,16 @@ func (o KubernetesObject) MatchesAny(rs []Resource) bool {
 	return false
 }
 
-func GrepResources(resources []Resource, in io.Reader, summary bool) (string, error) {
+type DisplayMode int
+
+const (
+	Full DisplayMode = iota
+	Summary
+	Clean
+	CleanStatus
+)
+
+func GrepResources(resources []Resource, in io.Reader, mode DisplayMode) (string, error) {
 	st, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", err
@@ -95,11 +106,11 @@ func GrepResources(resources []Resource, in io.Reader, summary bool) (string, er
 			for i, raw := range objs {
 				meta := metas[i]
 				if meta.MatchesAny(resources) {
-					o, err := yaml.Marshal(raw)
+					o, err := yaml.Marshal(strip(raw, mode))
 					if err != nil {
 						return "", err
 					}
-					if summary {
+					if mode == Summary {
 						matches = append(matches, meta.String())
 					} else {
 						matches = append(matches, "\n"+string(o))
@@ -108,18 +119,66 @@ func GrepResources(resources []Resource, in io.Reader, summary bool) (string, er
 			}
 		} else {
 			if obj.MatchesAny(resources) {
-				if summary {
+				if mode == Summary {
 					matches = append(matches, obj.String())
+				} else if mode == Clean || mode == CleanStatus {
+					raw := genericMap{}
+					if err := yaml.Unmarshal([]byte(text), &raw); err != nil {
+						return "", err
+					}
+					o, err := yaml.Marshal(strip(raw, mode))
+					if err != nil {
+						return "", err
+					}
+					matches = append(matches, "\n"+string(o))
 				} else {
 					matches = append(matches, text)
 				}
 			}
 		}
 	}
-	if summary {
+	if mode == Summary {
 		return strings.Join(matches, "\n"), nil
 	}
 	return strings.Join(matches, "\n---"), nil
+}
+
+func strip(raw genericMap, mode DisplayMode) interface{} {
+	if mode == Clean || mode == CleanStatus {
+		deleteNested(raw, "metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration")
+		deleteNested(raw, "metadata", "generation")
+		deleteNested(raw, "metadata", "resourceVersion")
+		deleteNested(raw, "metadata", "selfLink")
+		deleteNested(raw, "metadata", "uid")
+		deleteNested(raw, "metadata", "creationTimestamp")
+		deleteNested(raw, "metadata", "generateName")
+		deleteNested(raw, "metadata", "ownerReferences")
+		deleteNested(raw, "metadata", "managedFields")
+		deleteNested(raw, "metadata", "labels", "pod-template-hash")
+	}
+	if mode == CleanStatus {
+		deleteNested(raw, "status")
+	}
+	return raw
+}
+
+func deleteNested(raw genericMap, keys ...string) {
+	if len(keys) == 0 {
+		return
+	}
+	if len(keys) == 1 {
+		delete(raw, keys[0])
+	}
+	meta, ok := raw[keys[0]]
+	if ok {
+		metamap, ok := meta.(genericMap)
+		if ok {
+			deleteNested(metamap, keys[1:]...)
+			if len(metamap) == 0 {
+				delete(raw, keys[0])
+			}
+		}
+	}
 }
 
 func decomposeList(text string) ([]map[interface{}]interface{}, []KubernetesObject, error) {

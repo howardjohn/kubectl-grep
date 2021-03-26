@@ -10,21 +10,25 @@ import (
 )
 
 var (
-	unlist  = false
-	summary = false
+	unlist      = false
+	summary     = false
+	clean       = false
+	cleanStatus = false
 )
 
 var rootCmd = &cobra.Command{
-	Use: "kubectl-grep",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 && !unlist && !summary {
-			return fmt.Errorf("requires at least %d arg(s), only received %d", 1, len(args))
-		}
-		return nil
-	},
+	Use:   "kubectl-grep",
 	Short: "A plugin to grep Kubernetes resources.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		resources, err := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin(), summary)
+		dm := pkg.Full
+		if summary {
+			dm = pkg.Summary
+		} else if cleanStatus {
+			dm = pkg.CleanStatus
+		} else if clean {
+			dm = pkg.Clean
+		}
+		resources, err := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin(), dm)
 		if err != nil {
 			return err
 		}
@@ -38,6 +42,10 @@ func init() {
 		"Split Kubernetes lists")
 	rootCmd.PersistentFlags().BoolVarP(&summary, "summary", "s", summary,
 		"Summarize output")
+	rootCmd.PersistentFlags().BoolVarP(&clean, "clean", "n", clean,
+		"Cleanup generate fields")
+	rootCmd.PersistentFlags().BoolVarP(&cleanStatus, "clean-status", "N", cleanStatus,
+		"Cleanup generate fields, including status")
 }
 
 func Execute() {
