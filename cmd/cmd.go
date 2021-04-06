@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/howardjohn/kubectl-grep/pkg"
@@ -13,6 +14,7 @@ var (
 	unlist      = false
 	summary     = false
 	clean       = false
+	regex       = ""
 	cleanStatus = false
 )
 
@@ -28,7 +30,15 @@ var rootCmd = &cobra.Command{
 		} else if clean {
 			dm = pkg.Clean
 		}
-		resources, err := pkg.GrepResources(ParseArgs(args), cmd.InOrStdin(), dm)
+		selector := pkg.Selector{Resources: ParseArgs(args)}
+		if regex != "" {
+			rx, err := regexp.Compile(regex)
+			if err != nil {
+				return err
+			}
+			selector.Regex = rx
+		}
+		resources, err := pkg.GrepResources(selector, cmd.InOrStdin(), dm)
 		if err != nil {
 			return err
 		}
@@ -44,6 +54,8 @@ func init() {
 		"Summarize output")
 	rootCmd.PersistentFlags().BoolVarP(&clean, "clean", "n", clean,
 		"Cleanup generate fields")
+	rootCmd.PersistentFlags().StringVarP(&regex, "regex", "r", regex,
+		"Raw regex to match against")
 	rootCmd.PersistentFlags().BoolVarP(&cleanStatus, "clean-status", "N", cleanStatus,
 		"Cleanup generate fields, including status")
 }

@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
+
+type Selector struct {
+	Resources []Resource
+	Regex     *regexp.Regexp
+}
 
 type Resource struct {
 	Name      string
@@ -66,11 +72,16 @@ func (o KubernetesObject) Matches(r Resource) bool {
 	return true
 }
 
-func (o KubernetesObject) MatchesAny(rs []Resource) bool {
-	if len(rs) == 0 {
+func (o KubernetesObject) MatchesAny(sel Selector, text string) bool {
+	if sel.Regex != nil {
+		if !sel.Regex.MatchString(text) {
+			return false
+		}
+	}
+	if len(sel.Resources) == 0 {
 		return true
 	}
-	for _, r := range rs {
+	for _, r := range sel.Resources {
 		if o.Matches(r) {
 			return true
 		}
@@ -87,7 +98,7 @@ const (
 	CleanStatus
 )
 
-func GrepResources(resources []Resource, in io.Reader, mode DisplayMode) (string, error) {
+func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error) {
 	st, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", err
@@ -105,7 +116,15 @@ func GrepResources(resources []Resource, in io.Reader, mode DisplayMode) (string
 			}
 			for i, raw := range objs {
 				meta := metas[i]
-				if meta.MatchesAny(resources) {
+				txt := ""
+				if sel.Regex != nil {
+					got, err := yaml.Marshal(raw)
+					if err != nil {
+						panic(err.Error())
+					}
+					txt = string(got)
+				}
+				if meta.MatchesAny(sel, txt) {
 					o, err := yaml.Marshal(strip(raw, mode))
 					if err != nil {
 						return "", err
@@ -118,7 +137,7 @@ func GrepResources(resources []Resource, in io.Reader, mode DisplayMode) (string
 				}
 			}
 		} else {
-			if obj.MatchesAny(resources) {
+			if obj.MatchesAny(sel, text) {
 				if mode == Summary {
 					matches = append(matches, obj.String())
 				} else if mode == Clean || mode == CleanStatus {
@@ -181,7 +200,7 @@ func deleteNested(raw genericMap, keys ...string) {
 	}
 }
 
-func decomposeList(text string) ([]map[interface{}]interface{}, []KubernetesObject, error) {
+func decomposeList(text string) ([]genericMap, []KubernetesObject, error) {
 	m := KubernetesListMeta{}
 	if err := yaml.Unmarshal([]byte(text), &m); err != nil {
 		return nil, nil, err
