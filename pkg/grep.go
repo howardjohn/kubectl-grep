@@ -107,7 +107,7 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 	for _, text := range strings.Split(string(st), "\n---") {
 		obj := KubernetesObject{}
 		if err := yaml.Unmarshal([]byte(text), &obj); err != nil {
-			return "", err
+      return "", fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
 		}
 		if obj.Kind == "List" {
 			objs, metas, err := decomposeList(text)
