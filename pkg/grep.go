@@ -89,6 +89,10 @@ func (o KubernetesObject) MatchesAny(sel Selector, text string) bool {
 	return false
 }
 
+func (o KubernetesObject) Empty() bool {
+	return o.Kind == "" && o.Metadata.Name == "" && o.Metadata.Namespace == ""
+}
+
 type DisplayMode int
 
 const (
@@ -107,7 +111,7 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 	for _, text := range strings.Split(string(st), "\n---") {
 		obj := KubernetesObject{}
 		if err := yaml.Unmarshal([]byte(text), &obj); err != nil {
-      return "", fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
+			return "", fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
 		}
 		if obj.Kind == "List" {
 			objs, metas, err := decomposeList(text)
@@ -139,7 +143,9 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 		} else {
 			if obj.MatchesAny(sel, text) {
 				if mode == Summary {
-					matches = append(matches, obj.String())
+					if !obj.Empty() {
+						matches = append(matches, obj.String())
+					}
 				} else if mode == Clean || mode == CleanStatus {
 					raw := genericMap{}
 					if err := yaml.Unmarshal([]byte(text), &raw); err != nil {
