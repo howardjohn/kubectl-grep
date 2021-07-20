@@ -11,8 +11,9 @@ import (
 )
 
 type Selector struct {
-	Resources []Resource
-	Regex     *regexp.Regexp
+	Resources   []Resource
+	Regex       *regexp.Regexp
+	InvertRegex bool
 }
 
 type Resource struct {
@@ -74,8 +75,14 @@ func (o KubernetesObject) Matches(r Resource) bool {
 
 func (o KubernetesObject) MatchesAny(sel Selector, text string) bool {
 	if sel.Regex != nil {
-		if !sel.Regex.MatchString(text) {
-			return false
+		if sel.InvertRegex {
+			if sel.Regex.MatchString(text) {
+				return false
+			}
+		} else {
+			if !sel.Regex.MatchString(text) {
+				return false
+			}
 		}
 	}
 	if len(sel.Resources) == 0 {

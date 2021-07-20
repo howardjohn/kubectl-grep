@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	unlist      = false
-	summary     = false
-	clean       = false
-	regex       = ""
-	cleanStatus = false
+	unlist           = false
+	summary          = false
+	clean            = false
+	regex            = ""
+	invertRegex      = false
+	insensitiveRegex = false
+	cleanStatus      = false
 )
 
 var rootCmd = &cobra.Command{
@@ -32,11 +34,15 @@ var rootCmd = &cobra.Command{
 		}
 		selector := pkg.Selector{Resources: ParseArgs(args)}
 		if regex != "" {
+			if insensitiveRegex {
+				regex = `(?i)` + regex
+			}
 			rx, err := regexp.Compile(regex)
 			if err != nil {
 				return err
 			}
 			selector.Regex = rx
+			selector.InvertRegex = invertRegex
 		}
 		resources, err := pkg.GrepResources(selector, cmd.InOrStdin(), dm)
 		if err != nil {
@@ -54,8 +60,14 @@ func init() {
 		"Summarize output")
 	rootCmd.PersistentFlags().BoolVarP(&clean, "clean", "n", clean,
 		"Cleanup generate fields")
+
 	rootCmd.PersistentFlags().StringVarP(&regex, "regex", "r", regex,
 		"Raw regex to match against")
+	rootCmd.PersistentFlags().BoolVarP(&invertRegex, "invert-regex", "v", invertRegex,
+		"Invert regex match")
+	rootCmd.PersistentFlags().BoolVarP(&insensitiveRegex, "insensitive-regex", "i", insensitiveRegex,
+		"Invert regex match")
+
 	rootCmd.PersistentFlags().BoolVarP(&cleanStatus, "clean-status", "N", cleanStatus,
 		"Cleanup generate fields, including status")
 }
