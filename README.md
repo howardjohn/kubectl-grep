@@ -18,11 +18,15 @@ Usage:
   kubectl-grep [flags]
 
 Flags:
-  -n, --clean          Cleanup generate fields
-  -N, --clean-status   Cleanup generate fields, including status
-  -h, --help           help for kubectl-grep
-  -s, --summary        Summarize output
-  -L, --unlist         Split Kubernetes lists
+  -n, --clean               Cleanup generate fields
+  -N, --clean-status        Cleanup generate fields, including status
+  -h, --help                help for kubectl-grep
+  -i, --insensitive-regex   Invert regex match
+  -v, --invert-regex        Invert regex match
+  -r, --regex string        Raw regex to match against
+  -s, --summary             Summarize output
+  -L, --unlist              Split Kubernetes lists
+
 ```
 
 ## Examples
@@ -43,4 +47,9 @@ Flags:
 
 ```shell
 < some-config.yaml | kubectl grep 'Pod/*/dev' -N
+```
+#### Display all resources that contain the string `pertrytimeout` (case-insensitive), but do not contain `timeout`.
+
+```shell
+< some-config.yaml | kubectl grep -r pertrytimeout -i | kubectl grep -v -r timeout
 ```
