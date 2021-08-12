@@ -162,6 +162,9 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 					if err != nil {
 						return "", err
 					}
+					if len(raw) == 0 {
+						o = []byte("")
+					}
 					matches = append(matches, "\n"+string(o))
 				} else {
 					matches = append(matches, text)
