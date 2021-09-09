@@ -10,7 +10,10 @@ import (
 
 // Implementation borrowed from k8s.io/apimachinery to avoid large imports
 
-const separator = "---"
+const (
+	separator     = "---"
+	listSeparator = "- "
+)
 
 type Reader interface {
 	Read() ([]byte, error)
@@ -18,11 +21,13 @@ type Reader interface {
 
 type YAMLReader struct {
 	reader Reader
+	isList bool
 }
 
-func NewYAMLReader(r *bufio.Reader) *YAMLReader {
+func NewYAMLReader(r *bufio.Reader, isList bool) *YAMLReader {
 	return &YAMLReader{
 		reader: &LineReader{reader: r},
+		isList: isList,
 	}
 }
 
@@ -33,6 +38,15 @@ func (r *YAMLReader) Read() ([]byte, error) {
 		line, err := r.reader.Read()
 		if err != nil && err != io.EOF {
 			return nil, err
+		}
+
+		if r.isList {
+			// TODO: optimize if we know its a list
+			//sep := len([]byte(listSeparator))
+			//if i := bytes.Index(line, []byte(listSeparator)); i == 0 {
+			//	fmt.Println(string(line))
+			//	i+=sep
+			//}
 		}
 
 		sep := len([]byte(separator))

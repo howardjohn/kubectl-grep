@@ -109,8 +109,14 @@ const (
 	CleanStatus
 )
 
+var listFastHeader = `apiVersion: v1
+items:
+-`
+
 func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error) {
-	reader := NewYAMLReader(bufio.NewReader(in))
+	r := bufio.NewReader(in)
+	b, _ := r.Peek(len(listFastHeader))
+	reader := NewYAMLReader(r, string(b) == listFastHeader)
 	matches := []string{}
 	for {
 		text, err := reader.Read()
