@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/howardjohn/kubectl-grep/pkg"
@@ -24,6 +25,12 @@ var rootCmd = &cobra.Command{
 	Use:   "kubectl-grep",
 	Short: "A plugin to grep Kubernetes resources.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		f, perr := os.Create("cpu.pprof")
+		if perr != nil {
+			return perr
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 		dm := pkg.Full
 		if summary {
 			dm = pkg.Summary

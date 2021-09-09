@@ -1,9 +1,9 @@
 package pkg
 
 import (
+	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"regexp"
 	"strings"
 
@@ -73,14 +73,14 @@ func (o KubernetesObject) Matches(r Resource) bool {
 	return true
 }
 
-func (o KubernetesObject) MatchesAny(sel Selector, text string) bool {
+func (o KubernetesObject) MatchesAny(sel Selector, text []byte) bool {
 	if sel.Regex != nil {
 		if sel.InvertRegex {
-			if sel.Regex.MatchString(text) {
+			if sel.Regex.Match(text) {
 				return false
 			}
 		} else {
-			if !sel.Regex.MatchString(text) {
+			if !sel.Regex.Match(text) {
 				return false
 			}
 		}
@@ -110,14 +110,18 @@ const (
 )
 
 func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error) {
-	st, err := ioutil.ReadAll(in)
-	if err != nil {
-		return "", err
-	}
+	reader := NewYAMLReader(bufio.NewReader(in))
 	matches := []string{}
-	for _, text := range strings.Split(string(st), "\n---") {
+	for {
+		text, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to read document: %v", err)
+		}
 		obj := KubernetesObject{}
-		if err := yaml.Unmarshal([]byte(text), &obj); err != nil {
+		if err := yaml.Unmarshal(text, &obj); err != nil {
 			return "", fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
 		}
 		if obj.Kind == "List" {
@@ -127,13 +131,13 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 			}
 			for i, raw := range objs {
 				meta := metas[i]
-				txt := ""
+				var txt []byte
 				if sel.Regex != nil {
 					got, err := yaml.Marshal(raw)
 					if err != nil {
 						panic(err.Error())
 					}
-					txt = string(got)
+					txt = got
 				}
 				if meta.MatchesAny(sel, txt) {
 					o, err := yaml.Marshal(strip(raw, mode))
@@ -155,7 +159,7 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 					}
 				} else if mode == Clean || mode == CleanStatus {
 					raw := genericMap{}
-					if err := yaml.Unmarshal([]byte(text), &raw); err != nil {
+					if err := yaml.Unmarshal(text, &raw); err != nil {
 						return "", err
 					}
 					o, err := yaml.Marshal(strip(raw, mode))
@@ -167,7 +171,7 @@ func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error)
 					}
 					matches = append(matches, "\n"+string(o))
 				} else {
-					matches = append(matches, text)
+					matches = append(matches, string(text))
 				}
 			}
 		}
@@ -216,13 +220,13 @@ func deleteNested(raw genericMap, keys ...string) {
 	}
 }
 
-func decomposeList(text string) ([]genericMap, []KubernetesObject, error) {
+func decomposeList(text []byte) ([]genericMap, []KubernetesObject, error) {
 	m := KubernetesListMeta{}
-	if err := yaml.Unmarshal([]byte(text), &m); err != nil {
+	if err := yaml.Unmarshal(text, &m); err != nil {
 		return nil, nil, err
 	}
 	r := KubernetesListRaw{}
-	if err := yaml.Unmarshal([]byte(text), &r); err != nil {
+	if err := yaml.Unmarshal(text, &r); err != nil {
 		return nil, nil, err
 	}
 	return r.Items, m.Items, nil
