@@ -7,7 +7,7 @@ Unless transformations are applied, the original YAML structure, including comme
 
 ## Install
 
-`go get github.com/howardjohn/kubectl-grep`
+`go install github.com/howardjohn/kubectl-grep@latest`
 
 ## Usage
 
@@ -34,22 +34,22 @@ Flags:
 #### Apply just the Services in some configuration
 
 ```shell
-< some-config.yaml | kubectl grep Service/ | kubectl apply -f -
+cat some-config.yaml | kubectl grep Service/ | kubectl apply -f -
 ```
 
 #### Find a specific resource
 
 ```shell
-< some-config.yaml | kubectl grep Service/helloworld.default
+cat some-config.yaml | kubectl grep Service/helloworld.default
 ```
 
 #### Display all Pods in the `dev` namespace, hiding fields that add clutter like `managedFields`
 
 ```shell
-< some-config.yaml | kubectl grep 'Pod/*/dev' -N
+cat some-config.yaml | kubectl grep 'Pod/*/dev' -N
 ```
 #### Display all resources that contain the string `pertrytimeout` (case-insensitive), but do not contain `timeout`.
 
 ```shell
-< some-config.yaml | kubectl grep -r pertrytimeout -i | kubectl grep -v -r timeout
+cat some-config.yaml | kubectl grep -r pertrytimeout -i | kubectl grep -v -r timeout
 ```
