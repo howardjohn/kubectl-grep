@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -44,11 +43,9 @@ var rootCmd = &cobra.Command{
 			selector.Regex = rx
 			selector.InvertRegex = invertRegex
 		}
-		resources, err := pkg.GrepResources(selector, cmd.InOrStdin(), dm)
-		if err != nil {
+		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm); err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), resources)
 		return nil
 	},
 }

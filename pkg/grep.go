@@ -109,83 +109,56 @@ const (
 	CleanStatus
 )
 
-var listFastHeader = `apiVersion: v1
-items:
--`
-
-func GrepResources(sel Selector, in io.Reader, mode DisplayMode) (string, error) {
+func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) error {
+	output := func(d string) {
+		_, _ = fmt.Fprint(out, d)
+	}
 	r := bufio.NewReader(in)
-	b, _ := r.Peek(len(listFastHeader))
-	reader := NewYAMLReader(r, string(b) == listFastHeader)
-	matches := []string{}
+	reader := NewYAMLReader(r)
+	first := true
 	for {
 		text, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return "", fmt.Errorf("failed to read document: %v", err)
+			return fmt.Errorf("failed to read document: %v", err)
 		}
 		obj := KubernetesObject{}
 		if err := yaml.Unmarshal(text, &obj); err != nil {
-			return "", fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
+			return fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
 		}
-		if obj.Kind == "List" {
-			objs, metas, err := decomposeList(text)
-			if err != nil {
-				return "", err
-			}
-			for i, raw := range objs {
-				meta := metas[i]
-				var txt []byte
-				if sel.Regex != nil {
-					got, err := yaml.Marshal(raw)
-					if err != nil {
-						panic(err.Error())
-					}
-					txt = got
+		if obj.MatchesAny(sel, text) {
+			if mode == Summary {
+				if !obj.Empty() {
+					output(obj.String() + "\n")
 				}
-				if meta.MatchesAny(sel, txt) {
-					o, err := yaml.Marshal(strip(raw, mode))
-					if err != nil {
-						return "", err
-					}
-					if mode == Summary {
-						matches = append(matches, meta.String())
-					} else {
-						matches = append(matches, "\n"+string(o))
-					}
+			} else if mode == Clean || mode == CleanStatus {
+				raw := genericMap{}
+				if err := yaml.Unmarshal(text, &raw); err != nil {
+					return err
 				}
-			}
-		} else {
-			if obj.MatchesAny(sel, text) {
-				if mode == Summary {
-					if !obj.Empty() {
-						matches = append(matches, obj.String())
-					}
-				} else if mode == Clean || mode == CleanStatus {
-					raw := genericMap{}
-					if err := yaml.Unmarshal(text, &raw); err != nil {
-						return "", err
-					}
-					o, err := yaml.Marshal(strip(raw, mode))
-					if err != nil {
-						return "", err
-					}
-					if len(raw) == 0 {
-						o = []byte("")
-					}
-					matches = append(matches, "\n"+string(o))
-				} else {
-					matches = append(matches, string(text))
+				o, err := yaml.Marshal(strip(raw, mode))
+				if err != nil {
+					return err
 				}
+				if len(raw) == 0 {
+					o = []byte("")
+				}
+				if !first {
+					fmt.Fprint(out, "---\n")
+				}
+				output(string(o))
+			} else {
+				if !first {
+					fmt.Fprint(out, "---\n")
+				}
+				output(string(text))
 			}
 		}
+		first = false
 	}
-	if mode == Summary {
-		return strings.Join(matches, "\n"), nil
-	}
-	return strings.Join(matches, "\n---"), nil
+	return nil
 }
 
 func strip(raw genericMap, mode DisplayMode) interface{} {
@@ -224,16 +197,4 @@ func deleteNested(raw genericMap, keys ...string) {
 			}
 		}
 	}
-}
-
-func decomposeList(text []byte) ([]genericMap, []KubernetesObject, error) {
-	m := KubernetesListMeta{}
-	if err := yaml.Unmarshal(text, &m); err != nil {
-		return nil, nil, err
-	}
-	r := KubernetesListRaw{}
-	if err := yaml.Unmarshal(text, &r); err != nil {
-		return nil, nil, err
-	}
-	return r.Items, m.Items, nil
 }

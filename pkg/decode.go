@@ -11,22 +11,33 @@ import (
 // Implementation borrowed from k8s.io/apimachinery to avoid large imports
 
 const (
-	separator     = "---"
-	listSeparator = "- "
+	separator = "---"
 )
 
-type Reader interface {
-	Read() ([]byte, error)
-}
-
 type YAMLReader struct {
-	reader Reader
+	reader *LineReader
 	isList bool
 }
 
-func NewYAMLReader(r *bufio.Reader, isList bool) *YAMLReader {
+var listFastHeader = `apiVersion: v1
+items:
+-`
+
+var listFastHeaderTrim = `apiVersion: v1
+items:
+`
+
+func NewYAMLReader(r *bufio.Reader) *YAMLReader {
+	b, _ := r.Peek(len(listFastHeader))
+	isList := string(b) == listFastHeader
+	reader := &LineReader{reader: r}
+	if isList {
+		if _, err := reader.reader.Discard(len(listFastHeaderTrim)); err != nil {
+			return nil
+		}
+	}
 	return &YAMLReader{
-		reader: &LineReader{reader: r},
+		reader: reader,
 		isList: isList,
 	}
 }
@@ -34,19 +45,32 @@ func NewYAMLReader(r *bufio.Reader, isList bool) *YAMLReader {
 // Read returns a full YAML document.
 func (r *YAMLReader) Read() ([]byte, error) {
 	var buffer bytes.Buffer
+	listDiscard := make([]byte, 2, 2)
+	firstLoop := true
 	for {
+		if r.isList {
+			if !firstLoop {
+				rr, err := r.reader.reader.Peek(1)
+				if err != nil {
+					return nil, err
+				}
+				if rr[0] == '-' {
+					return buffer.Bytes(), nil
+				}
+				if rr[0] != ' ' {
+					if _, err := io.Copy(io.Discard, r.reader.reader); err != nil {
+						return nil, err
+					}
+					return buffer.Bytes(), nil
+				}
+			}
+			_, _ = r.reader.reader.Read(listDiscard)
+			firstLoop = false
+		}
+
 		line, err := r.reader.Read()
 		if err != nil && err != io.EOF {
 			return nil, err
-		}
-
-		if r.isList {
-			// TODO: optimize if we know its a list
-			//sep := len([]byte(listSeparator))
-			//if i := bytes.Index(line, []byte(listSeparator)); i == 0 {
-			//	fmt.Println(string(line))
-			//	i+=sep
-			//}
 		}
 
 		sep := len([]byte(separator))
@@ -78,6 +102,10 @@ func (r *YAMLReader) Read() ([]byte, error) {
 
 type LineReader struct {
 	reader *bufio.Reader
+}
+
+func (r *LineReader) Peak(n int) ([]byte, error) {
+	return r.reader.Peek(n)
 }
 
 // Read returns a single line (with '\n' ended) from the underlying reader.
