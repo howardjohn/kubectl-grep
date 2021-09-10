@@ -16,6 +16,10 @@ type Selector struct {
 	InvertRegex bool
 }
 
+func (s Selector) MatchesAll() bool {
+	return len(s.Resources) == 0 && s.Regex == nil
+}
+
 type Resource struct {
 	Name      string
 	Namespace string
@@ -123,6 +127,15 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) 
 		}
 		if err != nil {
 			return fmt.Errorf("failed to read document: %v", err)
+		}
+		// Optimization: Do not do YAML marshal if not needed
+		if sel.MatchesAll() && mode == Full {
+			if !first {
+				fmt.Fprint(out, "---\n")
+			}
+			output(string(text))
+			first = false
+			continue
 		}
 		obj := KubernetesObject{}
 		if err := yaml.Unmarshal(text, &obj); err != nil {
