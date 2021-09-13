@@ -20,8 +20,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "kubectl-grep",
-	Short: "A plugin to grep Kubernetes resources.",
+	Use:          "kubectl-grep",
+	Short:        "A plugin to grep Kubernetes resources.",
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dm := pkg.Full
 		if summary {

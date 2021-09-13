@@ -55,16 +55,22 @@ func (r *YAMLReader) Read() ([]byte, error) {
 					return nil, err
 				}
 				if rr[0] == '-' {
+					// We hit the next entry
 					return buffer.Bytes(), nil
 				}
 				if rr[0] != ' ' {
+					// Not part of the list anymore, just be end of the list
+					// Drain the list so we don't read more
 					if _, err := io.Copy(io.Discard, r.reader.reader); err != nil {
 						return nil, err
 					}
 					return buffer.Bytes(), nil
 				}
 			}
-			_, _ = r.reader.reader.Read(listDiscard)
+			_, err := io.ReadFull(r.reader.reader, listDiscard)
+			if err != nil {
+				return nil, err
+			}
 			firstLoop = false
 		}
 

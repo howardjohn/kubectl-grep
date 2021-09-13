@@ -139,7 +139,7 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) 
 		}
 		obj := KubernetesObject{}
 		if err := yaml.Unmarshal(text, &obj); err != nil {
-			return fmt.Errorf("failed to unmarshal yaml (%v): %v", text, err)
+			return fmt.Errorf("failed to unmarshal yaml (%v): %v", string(text), err)
 		}
 		if obj.MatchesAny(sel, text) {
 			if mode == Summary {
