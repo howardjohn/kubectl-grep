@@ -13,6 +13,7 @@ var (
 	unlist           = false
 	summary          = false
 	clean            = false
+	decode           = false
 	regex            = ""
 	invertRegex      = false
 	insensitiveRegex = false
@@ -44,7 +45,7 @@ var rootCmd = &cobra.Command{
 			selector.Regex = rx
 			selector.InvertRegex = invertRegex
 		}
-		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm); err != nil {
+		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm, decode); err != nil {
 			return err
 		}
 		return nil
@@ -58,6 +59,8 @@ func init() {
 		"Summarize output")
 	rootCmd.PersistentFlags().BoolVarP(&clean, "clean", "n", clean,
 		"Cleanup generate fields")
+	rootCmd.PersistentFlags().BoolVarP(&decode, "decode", "d", decode,
+		"Decode base64 fields in Secrets")
 
 	rootCmd.PersistentFlags().StringVarP(&regex, "regex", "r", regex,
 		"Raw regex to match against")

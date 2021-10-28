@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"regexp"
@@ -113,7 +114,7 @@ const (
 	CleanStatus
 )
 
-func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) error {
+func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, decode bool) error {
 	output := func(d string) {
 		_, _ = fmt.Fprint(out, d)
 	}
@@ -129,7 +130,7 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) 
 			return fmt.Errorf("failed to read document: %v", err)
 		}
 		// Optimization: Do not do YAML marshal if not needed
-		if sel.MatchesAll() && mode == Full {
+		if sel.MatchesAll() && mode == Full && !decode {
 			if !first {
 				fmt.Fprint(out, "---\n")
 			}
@@ -146,12 +147,16 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) 
 				if !obj.Empty() {
 					output(obj.String() + "\n")
 				}
-			} else if mode == Clean || mode == CleanStatus {
+			} else if mode == Clean || mode == CleanStatus || decode {
 				raw := genericMap{}
 				if err := yaml.Unmarshal(text, &raw); err != nil {
 					return err
 				}
-				o, err := yaml.Marshal(strip(raw, mode))
+				raw = strip(raw, mode)
+				if decode && obj.Kind == "Secret" {
+					raw = decodeSecret(raw)
+				}
+				o, err := yaml.Marshal(raw)
 				if err != nil {
 					return err
 				}
@@ -174,7 +179,34 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode) 
 	return nil
 }
 
-func strip(raw genericMap, mode DisplayMode) interface{} {
+func decodeSecret(raw genericMap) genericMap {
+	data, ok := raw["data"]
+	if !ok {
+		return raw
+	}
+	gm, ok := data.(genericMap)
+	if !ok {
+		return raw
+	}
+	for k, v := range gm {
+		gm[k] = base64Decode(v)
+	}
+	return raw
+}
+
+func base64Decode(d interface{}) interface{} {
+	t, ok := d.(string)
+	if !ok {
+		return d
+	}
+	b, err := base64.StdEncoding.DecodeString(t)
+	if err != nil {
+		return d
+	}
+	return string(b)
+}
+
+func strip(raw genericMap, mode DisplayMode) genericMap {
 	if mode == Clean || mode == CleanStatus {
 		deleteNested(raw, "metadata", "annotations", "kubectl.kubernetes.io/last-applied-configuration")
 		deleteNested(raw, "metadata", "generation")
