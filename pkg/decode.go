@@ -58,7 +58,8 @@ func (r *YAMLReader) Read() ([]byte, error) {
 					// We hit the next entry
 					return buffer.Bytes(), nil
 				}
-				if rr[0] != ' ' {
+				if rr[0] != ' ' && rr[0] != '\n' {
+					// TODO: match 'kind: List' exactly instead
 					// Not part of the list anymore, just be end of the list
 					// Drain the list so we don't read more
 					if _, err := io.Copy(io.Discard, r.reader.reader); err != nil {
