@@ -42,39 +42,47 @@ func NewYAMLReader(r *bufio.Reader) *YAMLReader {
 	}
 }
 
-// Read returns a full YAML document.
 func (r *YAMLReader) Read() ([]byte, error) {
+	if !r.isList {
+		return r.readFlat()
+	}
+	firstLine := true
 	var buffer bytes.Buffer
-	listDiscard := make([]byte, 2, 2)
-	firstLoop := true
 	for {
-		if r.isList {
-			if !firstLoop {
-				rr, err := r.reader.reader.Peek(1)
-				if err != nil {
+		start := r.reader.StartsList()
+		if start && !firstLine {
+			return buffer.Bytes(), nil
+		}
+		firstLine = false
+		l, err := r.reader.Read()
+		if err != nil {
+			return nil, err
+		}
+		switch len(l) {
+		case 0: // can have empty lines from YAMLs with newline in string.
+			return nil, fmt.Errorf("invalid line: %q", string(l))
+		case 1:
+			if l[0] != '\n' {
+				// Should not happen
+				return nil, fmt.Errorf("invalid line: %q", string(l))
+			}
+		default: // Trim the start
+			if l[0] == 'k' && l[1] == 'i' {
+				if _, err := io.Copy(io.Discard, r.reader.reader); err != nil {
 					return nil, err
 				}
-				if rr[0] == '-' {
-					// We hit the next entry
-					return buffer.Bytes(), nil
-				}
-				if rr[0] != ' ' && rr[0] != '\n' {
-					// TODO: match 'kind: List' exactly instead
-					// Not part of the list anymore, just be end of the list
-					// Drain the list so we don't read more
-					if _, err := io.Copy(io.Discard, r.reader.reader); err != nil {
-						return nil, err
-					}
-					return buffer.Bytes(), nil
-				}
+				// End of list. TODO: more robust check
+				return buffer.Bytes(), err
 			}
-			_, err := io.ReadFull(r.reader.reader, listDiscard)
-			if err != nil {
-				return nil, err
-			}
-			firstLoop = false
+			l = l[2:]
 		}
+		buffer.Write(l)
+	}
+}
 
+func (r *YAMLReader) readFlat() ([]byte, error) {
+	var buffer bytes.Buffer
+	for {
 		line, err := r.reader.Read()
 		if err != nil && err != io.EOF {
 			return nil, err
@@ -108,16 +116,33 @@ func (r *YAMLReader) Read() ([]byte, error) {
 }
 
 type LineReader struct {
-	reader *bufio.Reader
+	reader   *bufio.Reader
+	nextLine []byte
 }
 
 func (r *LineReader) Peak(n int) ([]byte, error) {
 	return r.reader.Peek(n)
 }
 
-// Read returns a single line (with '\n' ended) from the underlying reader.
-// An error is returned iff there is an error with the underlying reader.
+// StartsList checks if the next line starts a list
+func (r *LineReader) StartsList() bool {
+	if r.nextLine != nil {
+		return r.nextLine[0] == '-' && r.nextLine[1] == ' '
+	}
+	l, err := r.Read()
+	if err != nil {
+		return false
+	}
+	r.nextLine = l
+	return r.nextLine[0] == '-' && r.nextLine[1] == ' '
+}
+
 func (r *LineReader) Read() ([]byte, error) {
+	if r.nextLine != nil {
+		res := r.nextLine
+		r.nextLine = nil
+		return res, nil
+	}
 	var (
 		isPrefix bool  = true
 		err      error = nil
