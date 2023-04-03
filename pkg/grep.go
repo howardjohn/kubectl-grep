@@ -114,13 +114,32 @@ const (
 	CleanStatus
 )
 
-func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, decode bool) error {
-	output := func(d string) {
-		_, _ = fmt.Fprint(out, d)
+type Differ struct {
+	objs map[KubernetesObject]string
+}
+
+func (d *Differ) Add(obj KubernetesObject, fmt string) string {
+	old, f := d.objs[obj]
+	d.objs[obj] = fmt
+	if f {
+		return old
+	} else {
+		return fmt
 	}
+}
+
+func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, diff bool, decode bool) error {
+
 	r := bufio.NewReader(in)
 	reader := NewYAMLReader(r)
 	first := true
+	output := func(obj KubernetesObject, d string) {
+		if !first && mode != Summary {
+			_, _ = fmt.Fprint(out, "---\n")
+		}
+		first = false
+		_, _ = fmt.Fprint(out, d)
+	}
 	for {
 		text, err := reader.Read()
 		if err == io.EOF {
@@ -129,23 +148,19 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, 
 		if err != nil {
 			return fmt.Errorf("failed to read document: %v", err)
 		}
+		obj := KubernetesObject{}
 		// Optimization: Do not do YAML marshal if not needed
-		if sel.MatchesAll() && mode == Full && !decode {
-			if !first {
-				fmt.Fprint(out, "---\n")
-			}
-			output(string(text))
-			first = false
+		if sel.MatchesAll() && mode == Full && !decode && !diff {
+			output(obj, string(text))
 			continue
 		}
-		obj := KubernetesObject{}
 		if err := yaml.Unmarshal(text, &obj); err != nil {
 			return fmt.Errorf("failed to unmarshal yaml (%v): %v", string(text), err)
 		}
 		if obj.MatchesAny(sel, text) {
 			if mode == Summary {
 				if !obj.Empty() {
-					output(obj.String() + "\n")
+					output(obj, obj.String()+"\n")
 				}
 			} else if mode == Clean || mode == CleanStatus || decode {
 				raw := genericMap{}
@@ -163,18 +178,11 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, 
 				if len(raw) == 0 {
 					o = []byte("")
 				}
-				if !first {
-					fmt.Fprint(out, "---\n")
-				}
-				output(string(o))
+				output(obj, string(o))
 			} else {
-				if !first {
-					fmt.Fprint(out, "---\n")
-				}
-				output(string(text))
+				output(obj, string(text))
 			}
 		}
-		first = false
 	}
 	return nil
 }

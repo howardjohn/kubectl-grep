@@ -19,6 +19,7 @@ var (
 	invertRegex      = false
 	insensitiveRegex = false
 	cleanStatus      = false
+	diff             = false
 )
 
 var rootCmd = &cobra.Command{
@@ -46,7 +47,7 @@ var rootCmd = &cobra.Command{
 			selector.Regex = rx
 			selector.InvertRegex = invertRegex
 		}
-		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm, decode); err != nil {
+		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm, diff, decode); err != nil {
 			return err
 		}
 		return nil
@@ -72,6 +73,9 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&cleanStatus, "clean-status", "N", cleanStatus,
 		"Cleanup generate fields, including status")
+
+	rootCmd.PersistentFlags().BoolVarP(&diff, "diff", "w", diff,
+		"Show diff of changes")
 }
 
 func Execute() {

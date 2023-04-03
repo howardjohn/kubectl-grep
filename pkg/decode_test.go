@@ -205,7 +205,7 @@ metadata:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := bytes.Buffer{}
-			if err := GrepResources(Selector{}, strings.NewReader(tt.input), &o, Summary, false); err != nil {
+			if err := GrepResources(Selector{}, strings.NewReader(tt.input), &o, Summary, false, false); err != nil {
 				t.Fatal(err)
 			}
 			l := strings.Split(o.String(), "\n")
