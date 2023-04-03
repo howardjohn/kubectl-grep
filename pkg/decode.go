@@ -12,6 +12,8 @@ import (
 
 const (
 	separator = "---"
+	jsonStart = "{\n"
+	jsonEnd   = "}\n"
 )
 
 type YAMLReader struct {
@@ -82,16 +84,29 @@ func (r *YAMLReader) Read() ([]byte, error) {
 
 func (r *YAMLReader) readFlat() ([]byte, error) {
 	var buffer bytes.Buffer
+	wantJsonStart := true
+	gotJsonStart := false
 	for {
 		line, err := r.reader.Read()
 		if err != nil && err != io.EOF {
 			return nil, err
 		}
+		if wantJsonStart {
+			if bytes.Equal(line, []byte(jsonStart)) {
+				gotJsonStart = true
+			}
+		}
+		wantJsonStart = false
+		if gotJsonStart {
+			if bytes.Equal(line, []byte(jsonEnd)) {
+				buffer.Write(line)
+				return buffer.Bytes(), nil
+			}
+		}
 
-		sep := len([]byte(separator))
 		if i := bytes.Index(line, []byte(separator)); i == 0 {
 			// We have a potential document terminator
-			i += sep
+			i += len([]byte(separator))
 			trimmed := strings.TrimSpace(string(line[i:]))
 			// We only allow comments and spaces following the yaml doc separator, otherwise we'll return an error
 			if len(trimmed) > 0 && string(trimmed[0]) != "#" {
