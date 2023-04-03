@@ -5,8 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/howardjohn/kubectl-grep/pkg"
 	"github.com/spf13/cobra"
+
+	"github.com/howardjohn/kubectl-grep/pkg"
 )
 
 var (
