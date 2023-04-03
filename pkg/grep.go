@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sters/yaml-diff/yamldiff"
 	"gopkg.in/yaml.v2"
 )
 
@@ -115,7 +116,15 @@ const (
 	CleanStatus
 )
 
+type DiffType int
+
+const (
+	DiffLine   DiffType = iota
+	DiffInline DiffType = iota
+)
+
 type Differ struct {
+	mode DiffType
 	objs map[KubernetesObject]string
 }
 
@@ -123,27 +132,43 @@ func (d *Differ) Add(obj KubernetesObject, now string) string {
 	old, f := d.objs[obj]
 	d.objs[obj] = now
 	if f {
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(old, now, false)
-		return dmp.DiffPrettyText(dmp.DiffCleanupSemanticLossless(diffs))
+		if d.mode == DiffLine {
+			oy, _ := yamldiff.Load(old)
+			ny, _ := yamldiff.Load(now)
+			d := yamldiff.Do(oy, ny)
+			return d[0].Dump()
+		} else {
+			dmp := diffmatchpatch.New()
+			diffs := dmp.DiffMain(old, now, false)
+			return dmp.DiffPrettyText(dmp.DiffCleanupSemanticLossless(diffs))
+		}
 	} else {
 		return now
 	}
 }
 
-func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, diff bool, decode bool) error {
+type Opts struct {
+	Sel      Selector
+	Mode     DisplayMode
+	Diff     bool
+	DiffType DiffType
+	Decode   bool
+}
+
+func GrepResources(opts Opts, in io.Reader, out io.Writer) error {
 	r := bufio.NewReader(in)
 	reader := NewYAMLReader(r)
 	first := true
 	differ := &Differ{
+		mode: opts.DiffType,
 		objs: map[KubernetesObject]string{},
 	}
 	output := func(obj KubernetesObject, d string) {
-		if !first && mode != Summary {
+		if !first && opts.Mode != Summary {
 			_, _ = fmt.Fprint(out, "---\n")
 		}
 		first = false
-		if diff {
+		if opts.Diff {
 			d = differ.Add(obj, d)
 		}
 		_, _ = fmt.Fprint(out, d)
@@ -158,25 +183,25 @@ func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, 
 		}
 		obj := KubernetesObject{}
 		// Optimization: Do not do YAML marshal if not needed
-		if sel.MatchesAll() && mode == Full && !decode && !diff {
+		if opts.Sel.MatchesAll() && opts.Mode == Full && !opts.Decode && !opts.Diff {
 			output(obj, string(text))
 			continue
 		}
 		if err := yaml.Unmarshal(text, &obj); err != nil {
 			return fmt.Errorf("failed to unmarshal yaml (%v): %v", string(text), err)
 		}
-		if obj.MatchesAny(sel, text) {
-			if mode == Summary {
+		if obj.MatchesAny(opts.Sel, text) {
+			if opts.Mode == Summary {
 				if !obj.Empty() {
 					output(obj, obj.String()+"\n")
 				}
-			} else if mode == Clean || mode == CleanStatus || decode {
+			} else if opts.Mode == Clean || opts.Mode == CleanStatus || opts.Decode || opts.Diff {
 				raw := genericMap{}
 				if err := yaml.Unmarshal(text, &raw); err != nil {
 					return err
 				}
-				raw = strip(raw, mode)
-				if decode && obj.Kind == "Secret" {
+				raw = strip(raw, opts.Mode)
+				if opts.Decode && obj.Kind == "Secret" {
 					raw = decodeSecret(raw)
 				}
 				o, err := yaml.Marshal(raw)

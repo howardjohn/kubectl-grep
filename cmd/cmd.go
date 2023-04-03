@@ -20,6 +20,7 @@ var (
 	insensitiveRegex = false
 	cleanStatus      = false
 	diff             = false
+	diffMode         = "line"
 )
 
 var rootCmd = &cobra.Command{
@@ -35,6 +36,13 @@ var rootCmd = &cobra.Command{
 		} else if clean {
 			dm = pkg.Clean
 		}
+		dfm := pkg.DiffLine
+		switch diffMode {
+		case "line":
+			dfm = pkg.DiffLine
+		case "inline":
+			dfm = pkg.DiffInline
+		}
 		selector := pkg.Selector{Resources: ParseArgs(args)}
 		if regex != "" {
 			if insensitiveRegex {
@@ -47,7 +55,14 @@ var rootCmd = &cobra.Command{
 			selector.Regex = rx
 			selector.InvertRegex = invertRegex
 		}
-		if err := pkg.GrepResources(selector, cmd.InOrStdin(), cmd.OutOrStdout(), dm, diff, decode); err != nil {
+		opts := pkg.Opts{
+			Sel:      selector,
+			Mode:     dm,
+			Diff:     diff,
+			DiffType: dfm,
+			Decode:   decode,
+		}
+		if err := pkg.GrepResources(opts, cmd.InOrStdin(), cmd.OutOrStdout()); err != nil {
 			return err
 		}
 		return nil
@@ -75,7 +90,9 @@ func init() {
 		"Cleanup generate fields, including status")
 
 	rootCmd.PersistentFlags().BoolVarP(&diff, "diff", "w", diff,
-		"Show diff of changes")
+		"Show diff of changes. Use with `kubectl -ojson -w | kubectl grep -w`. -oyaml will skip the last object (#117075).")
+	rootCmd.PersistentFlags().StringVar(&diffMode, "diff-mode", diffMode,
+		"Format for diffs. Can be [line, inline].")
 }
 
 func Execute() {
