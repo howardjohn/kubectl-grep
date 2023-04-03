@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"gopkg.in/yaml.v2"
 )
 
@@ -118,26 +119,33 @@ type Differ struct {
 	objs map[KubernetesObject]string
 }
 
-func (d *Differ) Add(obj KubernetesObject, fmt string) string {
+func (d *Differ) Add(obj KubernetesObject, now string) string {
 	old, f := d.objs[obj]
-	d.objs[obj] = fmt
+	d.objs[obj] = now
 	if f {
-		return old
+		dmp := diffmatchpatch.New()
+		diffs := dmp.DiffMain(old, now, false)
+		return dmp.DiffPrettyText(dmp.DiffCleanupSemanticLossless(diffs))
 	} else {
-		return fmt
+		return now
 	}
 }
 
 func GrepResources(sel Selector, in io.Reader, out io.Writer, mode DisplayMode, diff bool, decode bool) error {
-
 	r := bufio.NewReader(in)
 	reader := NewYAMLReader(r)
 	first := true
+	differ := &Differ{
+		objs: map[KubernetesObject]string{},
+	}
 	output := func(obj KubernetesObject, d string) {
 		if !first && mode != Summary {
 			_, _ = fmt.Fprint(out, "---\n")
 		}
 		first = false
+		if diff {
+			d = differ.Add(obj, d)
+		}
 		_, _ = fmt.Fprint(out, d)
 	}
 	for {
