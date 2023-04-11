@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	unlist           = false
 	summary          = false
 	clean            = false
 	decode           = false
@@ -70,8 +69,6 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&unlist, "unlist", "L", unlist,
-		"Split Kubernetes lists")
 	rootCmd.PersistentFlags().BoolVarP(&summary, "summary", "s", summary,
 		"Summarize output")
 	rootCmd.PersistentFlags().BoolVarP(&clean, "clean", "n", clean,
@@ -90,7 +87,7 @@ func init() {
 		"Cleanup generate fields, including status")
 
 	rootCmd.PersistentFlags().BoolVarP(&diff, "diff", "w", diff,
-		"Show diff of changes. Use with `kubectl -ojson -w | kubectl grep -w`. -oyaml will skip the last object (#117075).")
+		"Show diff of changes. Use with 'kubectl -ojson -w | kubectl grep -w'")
 	rootCmd.PersistentFlags().StringVar(&diffMode, "diff-mode", diffMode,
 		"Format for diffs. Can be [line, inline].")
 }
