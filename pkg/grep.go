@@ -204,6 +204,9 @@ func GrepResources(opts Opts, in io.Reader, out io.Writer) error {
 				if opts.Decode && obj.Kind == "Secret" {
 					raw = decodeSecret(raw)
 				}
+				if opts.Decode && obj.Kind == "ConfigMap" {
+					raw = decodeConfigMap(raw)
+				}
 				o, err := yaml.Marshal(raw)
 				if err != nil {
 					return err
@@ -222,6 +225,21 @@ func GrepResources(opts Opts, in io.Reader, out io.Writer) error {
 
 func decodeSecret(raw genericMap) genericMap {
 	data, ok := raw["data"]
+	if !ok {
+		return raw
+	}
+	gm, ok := data.(genericMap)
+	if !ok {
+		return raw
+	}
+	for k, v := range gm {
+		gm[k] = base64Decode(v)
+	}
+	return raw
+}
+
+func decodeConfigMap(raw genericMap) genericMap {
+	data, ok := raw["binaryData"]
 	if !ok {
 		return raw
 	}
