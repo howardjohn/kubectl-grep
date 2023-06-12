@@ -6,12 +6,6 @@ export GO111MODULE ?= on
 
 all: format lint install
 
-$(GOBIN)/goimports:
-	(cd /tmp; go get golang.org/x/tools/cmd/goimports@v0.0.0-20200103221440-774c71fcf114)
-
-$(GOBIN)/golangci-lint:
-	(cd /tmp; go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.22.2)
-
 .PHONY: deps
 deps: $(GOBIN)/goimports $(GOBIN)/golangci-lint
 
@@ -29,12 +23,12 @@ check-git:
 gen-check: format check-git
 
 .PHONY: format
-format: $(GOBIN)/goimports
+format:
 	@go mod tidy
 	@goimports -l -w -local $(MODULE) .
 
 .PHONY: lint
-lint: $(GOBIN)/golangci-lint
+lint:
 	@golangci-lint run --fix
 
 .PHONY: install
