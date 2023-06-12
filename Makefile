@@ -26,7 +26,7 @@ check-git:
 	fi
 
 .PHONY: gen-check
-gen-check: check-git format
+gen-check: format check-git
 
 .PHONY: format
 format: $(GOBIN)/goimports
