@@ -1,0 +1,463 @@
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "annotations": {
+            "gateway.istio.io/controller-version": "5"
+        },
+        "creationTimestamp": "2023-08-11T18:09:36Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "18743",
+        "uid": "06b83503-983e-4573-8b5b-908d99de6ae1"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2023-08-11T18:09:36Z",
+                "message": "Resource accepted",
+                "observedGeneration": 1,
+                "reason": "Accepted",
+                "status": "True",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "2023-08-11T18:10:45Z",
+                "message": "Failed to assign to any requested addresses: no instances found for hostname \"namespace-istio-waypoint.default.svc.cluster.local\"",
+                "observedGeneration": 1,
+                "reason": "Invalid",
+                "status": "False",
+                "type": "Programmed"
+            }
+        ],
+        "listeners": [
+            {
+                "attachedRoutes": 0,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Accepted",
+                        "status": "True",
+                        "type": "Accepted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "NoConflicts",
+                        "status": "False",
+                        "type": "Conflicted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Programmed",
+                        "status": "True",
+                        "type": "Programmed"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "ResolvedRefs",
+                        "status": "True",
+                        "type": "ResolvedRefs"
+                    }
+                ],
+                "name": "mesh",
+                "supportedKinds": []
+            }
+        ]
+    }
+}
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "annotations": {
+            "gateway.istio.io/controller-version": "5"
+        },
+        "creationTimestamp": "2023-08-11T18:09:36Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "19136",
+        "uid": "06b83503-983e-4573-8b5b-908d99de6ae1"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2023-08-11T18:09:36Z",
+                "message": "Resource accepted",
+                "observedGeneration": 1,
+                "reason": "Accepted",
+                "status": "True",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "2023-08-11T18:10:45Z",
+                "message": "Failed to assign to any requested addresses: no instances found for hostname \"namespace-istio-waypoint.default.svc.cluster.local\"",
+                "observedGeneration": 1,
+                "reason": "Invalid",
+                "status": "False",
+                "type": "Programmed"
+            }
+        ],
+        "listeners": [
+            {
+                "attachedRoutes": 0,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Accepted",
+                        "status": "True",
+                        "type": "Accepted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "NoConflicts",
+                        "status": "False",
+                        "type": "Conflicted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Programmed",
+                        "status": "True",
+                        "type": "Programmed"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:09:36Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "ResolvedRefs",
+                        "status": "True",
+                        "type": "ResolvedRefs"
+                    }
+                ],
+                "name": "mesh",
+                "supportedKinds": []
+            }
+        ]
+    }
+}
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "creationTimestamp": "2023-08-11T18:14:11Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "19148",
+        "uid": "a9096e52-49a8-4fc3-bf26-39f8682b33eb"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "1970-01-01T00:00:00Z",
+                "message": "Waiting for controller",
+                "reason": "Pending",
+                "status": "Unknown",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "1970-01-01T00:00:00Z",
+                "message": "Waiting for controller",
+                "reason": "Pending",
+                "status": "Unknown",
+                "type": "Programmed"
+            }
+        ]
+    }
+}
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "annotations": {
+            "gateway.istio.io/controller-version": "5"
+        },
+        "creationTimestamp": "2023-08-11T18:14:11Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "19149",
+        "uid": "a9096e52-49a8-4fc3-bf26-39f8682b33eb"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "1970-01-01T00:00:00Z",
+                "message": "Waiting for controller",
+                "reason": "Pending",
+                "status": "Unknown",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "1970-01-01T00:00:00Z",
+                "message": "Waiting for controller",
+                "reason": "Pending",
+                "status": "Unknown",
+                "type": "Programmed"
+            }
+        ]
+    }
+}
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "annotations": {
+            "gateway.istio.io/controller-version": "5"
+        },
+        "creationTimestamp": "2023-08-11T18:14:11Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "19168",
+        "uid": "a9096e52-49a8-4fc3-bf26-39f8682b33eb"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2023-08-11T18:14:11Z",
+                "message": "Resource accepted",
+                "observedGeneration": 1,
+                "reason": "Accepted",
+                "status": "True",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "2023-08-11T18:14:11Z",
+                "message": "Failed to assign to any requested addresses: no instances found for hostname \"namespace-istio-waypoint.default.svc.cluster.local\"",
+                "observedGeneration": 1,
+                "reason": "Invalid",
+                "status": "False",
+                "type": "Programmed"
+            }
+        ],
+        "listeners": [
+            {
+                "attachedRoutes": 0,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Accepted",
+                        "status": "True",
+                        "type": "Accepted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "NoConflicts",
+                        "status": "False",
+                        "type": "Conflicted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Programmed",
+                        "status": "True",
+                        "type": "Programmed"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "ResolvedRefs",
+                        "status": "True",
+                        "type": "ResolvedRefs"
+                    }
+                ],
+                "name": "mesh",
+                "supportedKinds": []
+            }
+        ]
+    }
+}
+{
+    "apiVersion": "gateway.networking.k8s.io/v1beta1",
+    "kind": "Gateway",
+    "metadata": {
+        "annotations": {
+            "gateway.istio.io/controller-version": "5"
+        },
+        "creationTimestamp": "2023-08-11T18:14:11Z",
+        "generation": 1,
+        "name": "namespace",
+        "namespace": "default",
+        "resourceVersion": "19185",
+        "uid": "a9096e52-49a8-4fc3-bf26-39f8682b33eb"
+    },
+    "spec": {
+        "gatewayClassName": "istio-waypoint",
+        "listeners": [
+            {
+                "allowedRoutes": {
+                    "namespaces": {
+                        "from": "Same"
+                    }
+                },
+                "name": "mesh",
+                "port": 15008,
+                "protocol": "HBONE"
+            }
+        ]
+    },
+    "status": {
+        "addresses": [
+            {
+                "type": "Hostname",
+                "value": "namespace-istio-waypoint.default.svc.cluster.local"
+            }
+        ],
+        "conditions": [
+            {
+                "lastTransitionTime": "2023-08-11T18:14:11Z",
+                "message": "Resource accepted",
+                "observedGeneration": 1,
+                "reason": "Accepted",
+                "status": "True",
+                "type": "Accepted"
+            },
+            {
+                "lastTransitionTime": "2023-08-11T18:14:13Z",
+                "message": "Resource programmed, assigned to service(s) namespace-istio-waypoint.default.svc.cluster.local:15008",
+                "observedGeneration": 1,
+                "reason": "Programmed",
+                "status": "True",
+                "type": "Programmed"
+            }
+        ],
+        "listeners": [
+            {
+                "attachedRoutes": 0,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Accepted",
+                        "status": "True",
+                        "type": "Accepted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "NoConflicts",
+                        "status": "False",
+                        "type": "Conflicted"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "Programmed",
+                        "status": "True",
+                        "type": "Programmed"
+                    },
+                    {
+                        "lastTransitionTime": "2023-08-11T18:14:11Z",
+                        "message": "No errors found",
+                        "observedGeneration": 1,
+                        "reason": "ResolvedRefs",
+                        "status": "True",
+                        "type": "ResolvedRefs"
+                    }
+                ],
+                "name": "mesh",
+                "supportedKinds": []
+            }
+        ]
+    }
+}
