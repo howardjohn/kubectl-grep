@@ -136,7 +136,11 @@ func (d *Differ) Add(obj KubernetesObject, now string) string {
 			oy, _ := yamldiff.Load(old)
 			ny, _ := yamldiff.Load(now)
 			d := yamldiff.Do(oy, ny)
-			return d[0].Dump()
+			res := []string{}
+			for _, dd := range d {
+				res = append(res, dd.Dump())
+			}
+			return strings.Join(res, "---\n")
 		} else {
 			dmp := diffmatchpatch.New()
 			diffs := dmp.DiffMain(old, now, false)
