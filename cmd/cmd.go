@@ -20,6 +20,7 @@ var (
 	cleanStatus      = false
 	diff             = false
 	diffMode         = "line"
+	outputFolder     = ""
 )
 
 var rootCmd = &cobra.Command{
@@ -54,12 +55,18 @@ var rootCmd = &cobra.Command{
 			selector.Regex = rx
 			selector.InvertRegex = invertRegex
 		}
+		if outputFolder != "" {
+			if err := os.MkdirAll(outputFolder, os.ModePerm); err != nil {
+				return err
+			}
+		}
 		opts := pkg.Opts{
-			Sel:      selector,
-			Mode:     dm,
-			Diff:     diff,
-			DiffType: dfm,
-			Decode:   decode,
+			Sel:          selector,
+			Mode:         dm,
+			Diff:         diff,
+			DiffType:     dfm,
+			Decode:       decode,
+			OutputFolder: outputFolder,
 		}
 		if err := pkg.GrepResources(opts, cmd.InOrStdin(), cmd.OutOrStdout()); err != nil {
 			return err
@@ -90,6 +97,8 @@ func init() {
 		"Show diff of changes. Use with 'kubectl -ojson -w | kubectl grep -w'")
 	rootCmd.PersistentFlags().StringVar(&diffMode, "diff-mode", diffMode,
 		"Format for diffs. Can be [line, inline].")
+	rootCmd.PersistentFlags().StringVarP(&outputFolder, "output-folder", "o", outputFolder,
+		"Output separate files to given folder")
 }
 
 func Execute() {

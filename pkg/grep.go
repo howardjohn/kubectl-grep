@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -152,11 +154,12 @@ func (d *Differ) Add(obj KubernetesObject, now string) string {
 }
 
 type Opts struct {
-	Sel      Selector
-	Mode     DisplayMode
-	Diff     bool
-	DiffType DiffType
-	Decode   bool
+	Sel          Selector
+	Mode         DisplayMode
+	Diff         bool
+	DiffType     DiffType
+	Decode       bool
+	OutputFolder string
 }
 
 func GrepResources(opts Opts, in io.Reader, out io.Writer) error {
@@ -176,6 +179,13 @@ func GrepResources(opts Opts, in io.Reader, out io.Writer) error {
 			d = differ.Add(obj, d)
 		}
 		_, _ = fmt.Fprint(out, d)
+		if opts.OutputFolder != "" {
+			name := fmt.Sprintf("%s_%s_%s", obj.Kind, obj.Metadata.Name, obj.Metadata.Namespace)
+			filePath := filepath.Join(opts.OutputFolder, name)
+			if err := os.WriteFile(filePath, []byte(d), 0o644); err != nil {
+				fmt.Printf("failed to save yaml (%v) to %s: %v", name, filePath, err)
+			}
+		}
 	}
 	for {
 		text, err := reader.Read()
